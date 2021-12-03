@@ -1,0 +1,270 @@
+# фрагмент бази данних поліклініки
+# лікарі, пацієнти та діагнози
+
+CREATE DATABASE clinic;
+USE clinic;
+
+ТАБЛИЦЯ doctors:
+
+CREATE TABLE doctors(
+    -> id INT AUTO_INCREMENT,
+    -> name VARCHAR(25) NOT NULL,
+    -> surname VARCHAR(25) NOT NULL,
+    -> gender TINYINT DEFAULT(0),
+    -> appointment TINYINT DEFAULT(0),
+    -> PRIMARY KEY(id)
+    -> );
+
+# тестові данні для таблиці
+INSERT INTO doctors VALUES (NULL, 'Борис', 'Іванов', 1, 1);
+INSERT INTO doctors VALUES (NULL, 'Вікторія', 'Алексадрова', 0, 1);
+INSERT INTO doctors VALUES (NULL, 'Тетяна', 'Баталова', 0, 1);
+INSERT INTO doctors VALUES (NULL, 'Віталій', 'Богословський', 1, 1);
+INSERT INTO doctors VALUES (NULL, 'Олександр', 'Глінка', 1, 1);
+INSERT INTO doctors VALUES (NULL, 'Діана', 'Омелянчук', 0, 1);
+INSERT INTO doctors VALUES (NULL, 'Віктор', 'Посполіта', 1, 1);
+
+# усі лікарі
+SELECT * FROM doctors;
+
+# усі лікарі жіночої статі
+SELECT * FROM doctors WHERE gender = 0;
+
+# усі лікарі чоловічої статі
+SELECT * FROM doctors WHERE gender <> 0;
+
+# усі лікарі які приймають пацієнтів
+SELECT * FROM doctors WHERE appointment = 1;
+
+# усі лікарі які не приймають пацієнтів (у відпустці, на лікарняному чи де інде)
+SELECT * FROM doctors WHERE appointment <> 1;
+
+# пошук лікаря по імені і прізвищу
+SELECT * FROM doctors WHERE name = '{$doctor_name}' OR surname = '{$doctor_surname}';
+
+----------------------------------------------------------------------------------
+
+ТАБЛИЦЯ specializations:
+
+CREATE TABLE specializations(
+    -> id INT AUTO_INCREMENT,
+    -> specialization VARCHAR(50) NOT NULL,
+    -> description TEXT,
+    -> PRIMARY KEY(id)
+    -> );
+
+# тестові данні для таблиці
+INSERT INTO specializations VALUES(NULL, 'терапевт', 'Лікар-терапевт — спеціаліст у галузі терапії; лікар, що спеціалізується на виявленні, лікуванні, профілактиці внутрішніх хвороб.');
+
+INSERT INTO specializations VALUES(NULL, 'невролог', 'Невролог займається діагностикою та лікуванням хвороб, пов\'язаних з нервовою системою.  Це захворювання центральної (головний і спинний мозок) і периферичної нервової системи (нервові волокна).');
+
+INSERT INTO specializations VALUES(NULL, 'кардіолог', 'Лікар-кардіолог — фахівець з кардіології, медичний працівник, який займається діагностикою, лікуванням та профілактикою хвороб серця.');
+
+INSERT INTO specializations VALUES(NULL, 'гастроентеролог', 'Лікар-гастроентеролог — фахівець у галузі гастроентерології, медичний працівник, що займається діагностикою, лікуванням та профілактикою захворювань травної системи людини.');
+
+
+INSERT INTO specializations VALUES(NULL, 'гінеколог', 'Гінекологія - частина медицини вивчає захворювання характерні для жіночого організму, в основному жіночої репродуктивної системи. Якщо говорити простими словами: Гінеколог - це «жіночий доктор», доктор, який створений спеціально для прекрасної половини людства.');
+
+
+INSERT INTO specializations VALUES(NULL, 'андролог', 'Андролог - це суто чоловічий лікар, який знає особливості чоловічої анатомії й фізіології, займається вирішенням проблем, пов\'язаних з чоловічим здоров\'ям. Особлива увага приділяється профілактиці, діагностиці захворювань чоловічої статевої сфери і методам їх лікування.');
+
+
+------------------------------------------------------------------------------------------------------------
+
+
+ЗЄДНАЄМО ТАБЛИЦІ doctors И specialization
+(між таблицями doctors И specialization звязок типу "багато хто до багатьох")
+
+CREATE TABLE doctors_specializations(
+    -> id_doctor INT NOT NULL,
+    -> id_specialization INT NOT NULL,
+    -> FOREIGN KEY (id_doctor) REFERENCES doctors (id),
+    -> FOREIGN KEY (id_specialization) REFERENCES specializations (id)
+    -> );
+
+
+INSERT INTO doctors_specializations VALUES(1, 6);
+INSERT INTO doctors_specializations VALUES(2, 1);
+INSERT INTO doctors_specializations VALUES(3, 4);
+INSERT INTO doctors_specializations VALUES(4, 2);
+INSERT INTO doctors_specializations VALUES(5, 1);
+INSERT INTO doctors_specializations VALUES(6, 3);
+
+
+
+-------------- ВИБІРКА З ТАБЛИЦЬ doctors, specializations і doctors_specializations ----------
+
+# усі лікарі і їх спеціалізації
+SELECT doctors.id, doctors.name, doctors.surname, doctors_specializations.id_specialization, 
+specializations.specialization FROM 
+doctors INNER JOIN doctors_specializations ON doctors.id = doctors_specializations.id_doctor
+INNER JOIN specializations ON doctors_specializations.id_specialization = specializations.id;
+
+# усі спеціалізації лікаря з id = {$doctor_id}
+SELECT doctors.id, doctors.name, doctors.surname, doctors_specializations.id_specialization, 
+specializations.specialization FROM 
+doctors INNER JOIN doctors_specializations ON doctors.id = doctors_specializations.id_doctor
+INNER JOIN specializations ON doctors_specializations.id_specialization = specializations.id
+WHERE doctors.id = {$doctor_id};
+
+# усі лікарі які мають спеціалізацію id = {$id_specialization}
+SELECT doctors.id, doctors.name, doctors.surname, doctors_specializations.id_specialization, specializations.specialization
+FROM doctors RIGHT JOIN doctors_specializations ON doctors_specializations.id_doctor = doctors.id 
+RIGHT JOIN specializations ON specializations.id = doctors_specializations.id_specialization 
+WHERE specializations.id = {$id_specialization};
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------
+
+
+ТАБЛИЦЯ patients:
+
+CREATE TABLE patients(
+    -> id INT AUTO_INCREMENT,
+    -> name VARCHAR(20) NOT NULL,
+    -> surname VARCHAR(20) NOT NULL,
+    -> age TINYINT UNSIGNED NOT NULL,
+    -> gender TINYINT DEFAULT(0),
+    -> job VARCHAR(150),
+    -> PRIMARY KEY (id)
+    -> );
+
+# тестові данні для таблиці
+INSERT INTO patients VALUES(NULL, 'Зінаїда', 'Михайлова', 70, 0, 'прибиральниця');
+INSERT INTO patients VALUES(NULL, 'Валентин', 'Журавльов', 35, 1, 'далекобійник');
+INSERT INTO patients VALUES(NULL, 'Михайло', 'Криштопа', 31, 1, 'режисер монтажу');
+INSERT INTO patients VALUES(NULL, 'Анна', 'Медвєдєва', 27, 0, 'журналіст');
+INSERT INTO patients VALUES(NULL, 'Марина', 'Кукуріка', 21, 0, 'продавчиня');
+INSERT INTO patients VALUES(NULL, 'Костянтин', 'Шевченко', 25, 1, 'будівельник');
+INSERT INTO patients VALUES(NULL, 'Дмитро', 'Лозінський', 27, 1, 'програміст');
+INSERT INTO patients VALUES(NULL, 'Хрестина', 'Золотарьова', 17, 0, 'студентка');
+INSERT INTO patients VALUES(NULL, 'Ліза', 'Чайківська', 23, 0, 'швачка');
+INSERT INTO patients VALUES(NULL, 'Роман', 'Рибчинський', 43, 1, 'таксист');
+
+# усі пацієнти клініки
+SELECT * FROM patients;
+
+# усі пацієнти старші age > {$patients_ages}
+SELECT * FROM patients WHERE age > {$patients_ages};
+
+# усі пацієнти молодші age < {$patients_ages}
+SELECT * FROM patients WHERE age < {$patients_ages};
+
+# пацієнти в віковому діапазоні від {$min_age} до {$max_age}
+SELECT * FROM patients WHERE age BETWEEN {$min_age} AND {$max_age};
+
+# пацієнти жіночої статі
+SELECT * FROM patients WHERE gender = 0;
+
+# пацієнти чоловічої статі
+SELECT * FROM patients WHERE gender <> 0;
+
+-------------------------------------------------------------------------------------------------
+
+ТАБЛИЦЯ diagnoses:
+
+CREATE TABLE diagnoses(
+    -> id INT AUTO_INCREMENT,
+    -> diagnosis VARCHAR(200) UNIQUE,
+    -> PRIMARY KEY(id)
+    -> );
+    
+
+INSERT INTO diagnoses VALUES(NULL, 'ОРЗ');
+INSERT INTO diagnoses VALUES(NULL, 'бронхіт');
+INSERT INTO diagnoses VALUES(NULL, 'фаренгіт');
+INSERT INTO diagnoses VALUES(NULL, 'вегето-судинна дістонія');
+INSERT INTO diagnoses VALUES(NULL, 'шийний остохондроз');
+INSERT INTO diagnoses VALUES(NULL, 'міжреберна невралгія');
+INSERT INTO diagnoses VALUES(NULL, 'артеріальна гіпертензія');
+INSERT INTO diagnoses VALUES(NULL, 'гастрит');
+INSERT INTO diagnoses VALUES(NULL, 'виразка шлунку');
+INSERT INTO diagnoses VALUES(NULL, 'ендометріоз');
+INSERT INTO diagnoses VALUES(NULL, 'синдром полікістозних яєчників');
+INSERT INTO diagnoses VALUES(NULL, 'простатит');
+INSERT INTO diagnoses VALUES(NULL, 'варикоцеле');
+
+-----------------------------------------------------------------------------------------------
+
+ТАБЛИЦА doctors_diagnoses_patients:
+(між таблицями doctors і diagnoses звязок типу "багато хто до багатьох",
+ між таблицями doctors і patients звязок типу "багато хто до багатьох",
+ між таблицями diagnoses і patients звязок типу "багато хто до багатьох",
+ тобто таблиця doctors_diagnoses_patients існує для об'єднання усіх цих сутностей
+)
+
+CREATE TABLE doctors_diagnoses_patients(
+    -> id_doctor INT NOT NULL, 
+    -> id_diagnosis INT NOT NULL,
+    -> id_patient INT NOT NULL,
+    -> date DATETIME,
+    -> FOREIGN KEY (id_doctor) REFERENCES doctors (id),
+    -> FOREIGN KEY (id_diagnosis) REFERENCES diagnoses (id),
+    -> FOREIGN KEY (id_patient) REFERENCES patients (id)
+    -> );
+
+
+INSERT INTO doctors_diagnoses_patients VALUES(7, 10, 1, '2018-09-23 10:34:43');
+INSERT INTO doctors_diagnoses_patients VALUES(1, 13, 10, '2019-07-15 14:12:23');
+INSERT INTO doctors_diagnoses_patients VALUES(3 , 8, 4, '2021-08-11 15:03:15');
+INSERT INTO doctors_diagnoses_patients VALUES(6, 7, 1, '2015-03-14 11:21:24');
+INSERT INTO doctors_diagnoses_patients VALUES(4, 5, 2, '2021-05-19 16:45:57');
+INSERT INTO doctors_diagnoses_patients VALUES(2, 1, 7, '2021-02-25 17:03:07');
+INSERT INTO doctors_diagnoses_patients VALUES(5, 2, 3, '2021-03-2 13:10:09');
+INSERT INTO doctors_diagnoses_patients VALUES(4, 8, 4, '2021-05-19 16:45:57');
+INSERT INTO doctors_diagnoses_patients VALUES(4, 8, 2, '2021-05-19 16:45:57');
+INSERT INTO doctors_diagnoses_patients VALUES(3, 8, 8, '2021-05-19 16:45:57');
+INSERT INTO doctors_diagnoses_patients VALUES(3, 9, 8, '2021-05-19 18:35:27');
+INSERT INTO doctors_diagnoses_patients VALUES(4, 6, 8, '2021-10-15 13:43:10');
+
+
+-------------- ВИБІРКА З ТАБЛИЦЬ patients, diagnoses і doctors_diagnoses_patients ----------
+
+# всі лікарі, іх діагнози і пацієнти яким діагностували їх
+SELECT doctors_diagnoses_patients.id_doctor, doctors.name, doctors.surname, diagnoses.id AS id_diagnosis,
+diagnoses.diagnosis, patients.id AS patient_id, patients.name AS patient_name, patients.surname AS patient_surname
+FROM doctors LEFT JOIN doctors_diagnoses_patients ON doctors.id = doctors_diagnoses_patients.id_doctor
+LEFT JOIN diagnoses ON doctors_diagnoses_patients.id_diagnosis = diagnoses.id 
+LEFT JOIN patients ON doctors_diagnoses_patients.id_patient = patients.id;
+
+# лікар, його діагнози і пацієнти яким діагностували їх
+SELECT doctors_diagnoses_patients.id_doctor, doctors.name, doctors.surname, diagnoses.id AS id_diagnosis,
+diagnoses.diagnosis, patients.id AS patient_id, patients.name AS patient_name, patients.surname AS patient_surname
+FROM doctors LEFT JOIN doctors_diagnoses_patients ON doctors.id = doctors_diagnoses_patients.id_doctor
+LEFT JOIN diagnoses ON doctors_diagnoses_patients.id_diagnosis = diagnoses.id 
+LEFT JOIN patients ON doctors_diagnoses_patients.id_patient = patients.id WHERE doctors.id = {$doctor_id};
+
+# всі діагнози пацієнта з patients.id = {$patients_id}
+SELECT patients.id, patients.name, patients.surname, diagnoses.id AS diagnoses_id, diagnoses.diagnosis,
+specializations.specialization, doctors.name, doctors.surname 
+FROM patients LEFT JOIN doctors_diagnoses_patients ON patients.id = doctors_diagnoses_patients.id_patient
+LEFT JOIN diagnoses ON doctors_diagnoses_patients.id_diagnosis = diagnoses.id
+LEFT JOIN doctors ON doctors_diagnoses_patient8s.id_doctor = doctors.id
+LEFT JOIN doctors_specializations ON doctors_specializations.id_doctor = doctors.id
+LEFT JOIN specializations ON doctors_specializations.id_specialization = specializations.id 
+WHERE patients.id = {$patients_id};
+
+# всі діагнози пацієнта з patients.id = {$patients_id} діагностовані лікарем з doctors.id = {$id_doctor}
+SELECT patients.id, patients.name, patients.surname, diagnoses.id AS diagnoses_id, diagnoses.diagnosis,
+specializations.specialization, doctors.name, doctors.surname 
+FROM patients LEFT JOIN doctors_diagnoses_patients ON patients.id = doctors_diagnoses_patients.id_patient
+LEFT JOIN diagnoses ON doctors_diagnoses_patients.id_diagnosis = diagnoses.id
+LEFT JOIN doctors ON doctors_diagnoses_patients.id_doctor = doctors.id
+LEFT JOIN doctors_specializations ON doctors_specializations.id_doctor = doctors.id
+LEFT JOIN specializations ON doctors_specializations.id_specialization = specializations.id 
+WHERE patients.id = {$patients_id} AND doctors.id = {$id_doctor};
+
+
+
+
+
+
